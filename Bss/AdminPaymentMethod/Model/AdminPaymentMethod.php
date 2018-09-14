@@ -25,11 +25,10 @@ namespace Bss\AdminPaymentMethod\Model;
  */
 class AdminPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
 {
- 
     /**
      * Payment code
      *
-     * @var string
+     * @var string|bool
      */
     const CODE                  = 'adminpaymentmethod';
     protected $_code            = self::CODE;

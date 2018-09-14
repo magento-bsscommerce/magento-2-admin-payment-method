@@ -21,12 +21,13 @@
 	<default>
 		<payment>
 			<adminpaymentmethod>
-				<model>Bss\AdminPaymentMethod\Model\AdminPaymentMethod</model>
 				<active>1</active>
-				<order_status>pending</order_status>
 				<title>Admin Payment Method</title>
+				<order_status>pending</order_status>
 				<allowspecific>0</allowspecific>
 				<preselect>1</preselect>
+				<model>Bss\AdminPaymentMethod\Model\AdminPaymentMethod</model>
+				<group>offline</group>
 			</adminpaymentmethod>
 		</payment>
 	</default>
