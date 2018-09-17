@@ -24,35 +24,36 @@ namespace Bss\AdminPaymentMethod\Plugin;
  * @package Bss\AdminPaymentMethod\Plugin
  */
 
-class PreSelect extends \Magento\Framework\App\Helper\AbstractHelper
+class PreSelect
 {
-	 /**
-     * @var \Bss\AdminPaymentMethod\Plugin\PreSelect
+    /**
+     * @var \Bss\AdminPaymentMethod\Model\AdminPaymentMethod
      */
-	protected $scopeConfig;
+    private $model;
 
-	 /**
+    /**
      * PreSelect constructor.
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param \Bss\AdminPaymentMethod\Model\AdminPaymentMethod $model
      */
-	public function __construct(\Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig)
-	{
-		$this->scopeConfig = $scopeConfig;
-	}
+    public function __construct(\Bss\AdminPaymentMethod\Model\AdminPaymentMethod $model)
+    {
+        $this->model = $model;
+    }
 
     /**
      * @param \Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method\Form $block
      * @param $result
      * @return bool|string
      */
-    public function afterGetSelectedMethodCode(\Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method\Form $block, $result)
-	{
-		$storeScope = \Magento\Store\Model\ScopeInterface::SCOPE_STORE;
-		$data = $this->scopeConfig->getValue("payment/adminpaymentmethod/preselect",$storeScope );
-		if ($data) {
-			$result = \Bss\AdminPaymentMethod\Model\AdminPaymentMethod::CODE;    
-			return $result; 
-		}
-		return false;
-	}
+    public function afterGetSelectedMethodCode(
+        \Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method\Form $block,
+        $result
+    ) {
+        $data = $this->model->getDataPreSelect();
+        if ($data) {
+            $result = \Bss\AdminPaymentMethod\Model\AdminPaymentMethod::CODE;
+            return $result;
+        }
+        return false;
+    }
 }

@@ -17,7 +17,7 @@
  */
 
 namespace Bss\AdminPaymentMethod\Model;
- 
+
 /**
  * Class AdminPaymentMethod
  *
@@ -35,4 +35,14 @@ class AdminPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
     protected $_isOffline       = true;
     protected $_canUseCheckout  = false;
     protected $_canUseInternal  = true;
+
+    /**
+     * Get pre select option from config
+     *
+     * @return string
+     */
+    public function getDataPreSelect()
+    {
+        return $this->getConfigData('preselect');
+    }
 }
