@@ -51,6 +51,11 @@
                     <label><![CDATA[Pre Select]]></label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="createinvoice" translate="label" type="select" sortOrder="45" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                <label><![CDATA[Auto Create Invoice]]></label>
+                <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                <comment><![CDATA[Will auto create invoice when choose Yes with Admin Payment Method]]></comment>
+                </field>
             </group>
         </section>
     </system>

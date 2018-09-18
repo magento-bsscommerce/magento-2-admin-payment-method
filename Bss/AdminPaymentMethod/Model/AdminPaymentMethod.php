@@ -45,4 +45,14 @@ class AdminPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
     {
         return $this->getConfigData('preselect');
     }
+
+    /**
+     * Get Auto Create Invoice option from config
+     *
+     * @return bool
+     */
+    public function getDataAutoCreateInvoice()
+    {
+        return $this->getConfigData('createinvoice');
+    }
 }
