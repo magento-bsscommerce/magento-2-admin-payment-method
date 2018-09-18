@@ -61,7 +61,7 @@ class AutoCreateInvoice implements ObserverInterface
     {
         $order = $observer->getEvent()->getOrder();
         $payment = $order->getPayment()->getMethodInstance();
-        if ($payment->getConfigData('createinvoice')) {
+        if ($payment->getCode()== 'adminpaymentmethod' && $payment->getConfigData('createinvoice')) {
             try {
                 if (!$order->canInvoice()) {
                     return null;
