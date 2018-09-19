@@ -56,6 +56,11 @@
                 <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 <comment><![CDATA[Will auto create invoice when choose Yes with Admin Payment Method]]></comment>
                 </field>
+                <field id="createshipment" translate="label" type="select" sortOrder="46" showInDefault="1" showInWebsite="1" showInStore="0" canRestore="1">
+                    <label><![CDATA[Auto Create Shipment]]></label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Will auto create shipment when choose Yes with Admin Payment Method]]></comment>
+                </field>
             </group>
         </section>
     </system>
