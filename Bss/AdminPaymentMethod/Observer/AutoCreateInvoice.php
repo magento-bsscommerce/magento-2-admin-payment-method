@@ -30,11 +30,17 @@ class AutoCreateInvoice implements ObserverInterface
 {
     /**
      * @var \Magento\Sales\Model\Service\InvoiceService
-     * @var \Magento\Framework\DB\TransactionFactory
-     * @var \Magento\Framework\Message\ManagerInterface
      */
     protected $invoiceService;
+
+    /**
+     * @var \Magento\Framework\DB\TransactionFactory
+     */
     protected $transaction;
+
+    /**
+     * @var \Magento\Framework\Message\ManagerInterface
+     */
     protected $messageManager;
 
     /**
@@ -70,7 +76,9 @@ class AutoCreateInvoice implements ObserverInterface
                     return null;
                 }
 
+                //Show message create invoice
                 $this->messageManager->addSuccess(__("Automatically generated Invoice."));
+
                 $invoice = $this->invoiceService->prepareInvoice($order);
                 $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
                 $invoice->register();

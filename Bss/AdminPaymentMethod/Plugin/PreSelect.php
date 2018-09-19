@@ -49,6 +49,10 @@ class PreSelect
         \Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method\Form $block,
         $result
     ) {
+        if ($result && $result != 'free') {
+            return $result;
+        }
+
         $data = $this->model->getDataPreSelect();
         if ($data) {
             $result = \Bss\AdminPaymentMethod\Model\AdminPaymentMethod::CODE;
