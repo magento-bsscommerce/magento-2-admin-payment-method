@@ -132,13 +132,13 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                 $orderShipment->register();
                 $orderShipment->getOrder()->setIsInProcess(true);
                 try {
-                    // Save created Order Shipment
-                    $orderShipment->save();
-                    $orderShipment->getOrder()->save();
-
                     // Send Shipment Email
                     $this->shipmentNotifier->notify($orderShipment);
                     $orderShipment->save();
+
+                    // Save created Order Shipment
+                    $orderShipment->save();
+                    $orderShipment->getOrder()->save();
 
                     //Show message create shipment
                     $this->messageManager->addSuccess(__("Automatically generated Shipment."));
@@ -148,6 +148,24 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                     );
                 }
             }
+            $this->displayNotified($order, $payment);
         }
+    }
+
+    /**
+     * @param $order
+     * @param $payment
+     * return
+     */
+    private function displayNotified($order, $payment)
+    {
+        if ($payment->getConfigData('createinvoice') && $payment->getConfigData('createshipment')) {
+            return $order->addStatusHistoryComment(__('Automatically Invoice and Shipment By Bss Invoice Shipment'))->save();
+        } elseif ($payment->getConfigData('createinvoice')) {
+            return $order->addStatusHistoryComment(__('Automatically Invoice By Bss Invoice'))->save();
+        } elseif ($payment->getConfigData('createshipment')) {
+            return $order->addStatusHistoryComment(__('Automatically Shipment By Bss Shipment'))->save();
+        }
+        return null;
     }
 }
