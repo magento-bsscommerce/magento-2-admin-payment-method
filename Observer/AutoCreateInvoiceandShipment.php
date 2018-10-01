@@ -92,8 +92,6 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                     if (!$order->canInvoice() || !$order->getState() == 'new') {
                         return null;
                     }
-                    //Show message create invoice
-                    $this->messageManager->addSuccess(__("Automatically generated Invoice."));
 
                     $invoice = $this->invoiceService->prepareInvoice($order);
                     $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
@@ -101,6 +99,8 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                     $invoice->getOrder()->setIsInProcess(true);
                     $transaction = $this->transaction->create()->addObject($invoice)->addObject($invoice->getOrder());
                     $transaction->save();
+                    //Show message create invoice
+                    $this->messageManager->addSuccessMessage(__("Automatically generated Invoice."));
                 } catch (\Exception $e) {
                     $order->addStatusHistoryComment('Exception message: ' . $e->getMessage(), false);
                     $order->save();
@@ -141,7 +141,7 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                     $orderShipment->getOrder()->save();
 
                     //Show message create shipment
-                    $this->messageManager->addSuccess(__("Automatically generated Shipment."));
+                    $this->messageManager->addSuccessMessage(__("Automatically generated Shipment."));
                 } catch (\Exception $e) {
                     throw new \Magento\Framework\Exception\LocalizedException(
                         __($e->getMessage())
@@ -159,13 +159,19 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
      */
     private function displayNotified($order, $payment)
     {
-        if ($payment->getConfigData('createinvoice') && $payment->getConfigData('createshipment')) {
-            return $order->addStatusHistoryComment(__('Automatically Invoice and Shipment By Bss Invoice Shipment'))->save();
-        } elseif ($payment->getConfigData('createinvoice')) {
-            return $order->addStatusHistoryComment(__('Automatically Invoice By Bss Invoice'))->save();
-        } elseif ($payment->getConfigData('createshipment')) {
-            return $order->addStatusHistoryComment(__('Automatically Shipment By Bss Shipment'))->save();
+        try {
+            if ($payment->getConfigData('createinvoice') && $payment->getConfigData('createshipment')) {
+                return $order->addStatusHistoryComment(__('Automatically Invoice and Shipment By Bss Invoice Shipment'))->save();
+            } elseif ($payment->getConfigData('createinvoice')) {
+                return $order->addStatusHistoryComment(__('Automatically Invoice By Bss Invoice'))->save();
+            } elseif ($payment->getConfigData('createshipment')) {
+                return $order->addStatusHistoryComment(__('Automatically Shipment By Bss Shipment'))->save();
+            }
+            return null;
+        } catch (\Exception $e) {
+            $order->addStatusHistoryComment('Exception message: ' . $e->getMessage(), false);
+            $order->save();
+            return null;
         }
-        return null;
     }
 }
