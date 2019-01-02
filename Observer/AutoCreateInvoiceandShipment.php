@@ -77,7 +77,7 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
 
     /**
      * @param Observer $observer
-     * @return null|void
+     * @throws \Magento\Framework\Exception\LocalizedException
      */
     public function execute(Observer $observer)
     {
@@ -86,76 +86,97 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
 
         // Check code payment method
         if ($payment->getCode() == 'adminpaymentmethod') {
-            // Check option createinvoice
-            if ($payment->getConfigData('createinvoice')) {
-                try {
-                    if (!$order->canInvoice() || !$order->getState() == 'new') {
-                        return null;
-                    }
-
-                    $invoice = $this->invoiceService->prepareInvoice($order);
-                    $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
-                    $invoice->register();
-                    $invoice->getOrder()->setIsInProcess(true);
-                    $transaction = $this->transaction->create()->addObject($invoice)->addObject($invoice->getOrder());
-                    $transaction->save();
-                    //Show message create invoice
-                    $this->messageManager->addSuccessMessage(__("Automatically generated Invoice."));
-                } catch (\Exception $e) {
-                    $order->addStatusHistoryComment('Exception message: ' . $e->getMessage(), false);
-                    $order->save();
-                    return null;
-                }
-            }
-
             // Check option createshipment
-            if ($payment->getConfigData('createshipment')) {
-                // to check order can ship or not
-                if (!$order->canShip()) {
-                    throw new \Magento\Framework\Exception\LocalizedException(
-                        __('You cant create the Shipment of this order.')
-                    );
-                }
-                $orderShipment = $this->convertOrder->toShipment($order);
-
-                foreach ($order->getAllItems() as $orderItem) {
-                    // Check virtual item and item Quantity
-                    if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
-                        continue;
-                    }
-                    $qty = $orderItem->getQtyToShip();
-                    $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
-
-                    $orderShipment->addItem($shipmentItem);
-                }
-
-                $orderShipment->register();
-                $orderShipment->getOrder()->setIsInProcess(true);
-                try {
-                    // Send Shipment Email
-                    $this->shipmentNotifier->notify($orderShipment);
-                    $orderShipment->save();
-
-                    // Save created Order Shipment
-                    $orderShipment->save();
-                    $orderShipment->getOrder()->save();
-
-                    //Show message create shipment
-                    $this->messageManager->addSuccessMessage(__("Automatically generated Shipment."));
-                } catch (\Exception $e) {
-                    throw new \Magento\Framework\Exception\LocalizedException(
-                        __($e->getMessage())
-                    );
-                }
-            }
+            $this->createShipment($payment, $order);
+            // Check option createinvoice
+            $this->createInvoice($payment, $order);
+            //create notified invoice and shipment by Bss
             $this->displayNotified($order, $payment);
+        }
+    }
+
+    /**
+     * @param $payment
+     * @param $order
+     * @return |null
+     */
+    private function createInvoice($payment, $order)
+    {
+        if ($payment->getConfigData('createinvoice')) {
+            try {
+                if (!$order->canInvoice() || !$order->getState() == 'new') {
+                    throw new \Magento\Framework\Exception\LocalizedException(
+                        __('You cant create the Invoice of this order.')
+                    );
+                }
+
+                $invoice = $this->invoiceService->prepareInvoice($order);
+                $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
+                $invoice->register();
+                $invoice->getOrder()->setIsInProcess(true);
+                $transaction = $this->transaction->create()->addObject($invoice)->addObject($invoice->getOrder());
+                $transaction->save();
+                //Show message create invoice
+                $this->messageManager->addSuccessMessage(__("Automatically generated Invoice."));
+            } catch (\Exception $e) {
+                $order->addStatusHistoryComment('Exception message: ' . $e->getMessage(), false);
+                $order->save();
+            }
+        }
+    }
+
+    /**
+     * @param $payment
+     * @param $order
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    private function createShipment($payment, $order)
+    {
+        if ($payment->getConfigData('createshipment')) {
+            // to check order can ship or not
+            if (!$order->canShip()) {
+                throw new \Magento\Framework\Exception\LocalizedException(
+                    __('You cant create the Shipment of this order.')
+                );
+            }
+            $orderShipment = $this->convertOrder->toShipment($order);
+
+            foreach ($order->getAllItems() as $orderItem) {
+                // Check virtual item and item Quantity
+                if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
+                    continue;
+                }
+                $qty = $orderItem->getQtyToShip();
+                $shipmentItem = $this->convertOrder->itemToShipmentItem($orderItem)->setQty($qty);
+
+                $orderShipment->addItem($shipmentItem);
+            }
+
+            $orderShipment->register();
+            $orderShipment->getOrder()->setIsInProcess(true);
+            try {
+                // Send Shipment Email
+                $this->shipmentNotifier->notify($orderShipment);
+                $orderShipment->save();
+
+                // Save created Order Shipment
+                $orderShipment->save();
+                $orderShipment->getOrder()->save();
+
+                //Show message create shipment
+                $this->messageManager->addSuccessMessage(__("Automatically generated Shipment."));
+            } catch (\Exception $e) {
+                throw new \Magento\Framework\Exception\LocalizedException(
+                    __($e->getMessage())
+                );
+            }
         }
     }
 
     /**
      * @param $order
      * @param $payment
-     * return
+     * @return |null
      */
     private function displayNotified($order, $payment)
     {
