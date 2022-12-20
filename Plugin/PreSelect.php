@@ -12,7 +12,7 @@
  * @category  BSS
  * @package   Bss_AdminPaymentMethod
  * @author    Extension Team
- * @copyright Copyright (c) 2018-2019 BSS Commerce Co. ( http://bsscommerce.com )
+ * @copyright Copyright (c) 2018-2022 BSS Commerce Co. ( http://bsscommerce.com )
  * @license   http://bsscommerce.com/Bss-Commerce-License.txt
  */
 
@@ -32,7 +32,8 @@ class PreSelect
     private $model;
 
     /**
-     * PreSelect constructor.
+     * PreSelect constructor
+     *
      * @param \Bss\AdminPaymentMethod\Model\AdminPaymentMethod $model
      */
     public function __construct(\Bss\AdminPaymentMethod\Model\AdminPaymentMethod $model)
@@ -41,8 +42,10 @@ class PreSelect
     }
 
     /**
+     * After get select method code
+     *
      * @param \Magento\Sales\Block\Adminhtml\Order\Create\Billing\Method\Form $block
-     * @param $result
+     * @param string $result
      * @return bool|string
      */
     public function afterGetSelectedMethodCode(
@@ -55,8 +58,7 @@ class PreSelect
 
         $data = $this->model->getDataPreSelect();
         if ($data) {
-            $result = \Bss\AdminPaymentMethod\Model\AdminPaymentMethod::CODE;
-            return $result;
+            return \Bss\AdminPaymentMethod\Model\AdminPaymentMethod::CODE;
         }
         return false;
     }

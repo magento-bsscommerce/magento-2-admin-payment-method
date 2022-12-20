@@ -30,30 +30,30 @@ class AdminPaymentMethod extends \Magento\Payment\Model\Method\AbstractMethod
      *
      * @var string|bool
      */
-    const CODE                  = 'adminpaymentmethod';
+    const CODE = 'adminpaymentmethod';
 
     /**
      * @var string
      */
-    protected $_code            = self::CODE;
+    protected $_code = self::CODE;
 
     /**
      * @var bool
      */
-    protected $_isOffline       = true;
+    protected $_isOffline = true;
 
     /**
      * @var bool
      */
-    protected $_canUseCheckout  = false;
+    protected $_canUseCheckout = false;
 
     /**
      * @var bool
      */
-    protected $_canUseInternal  = true;
+    protected $_canUseInternal = true;
 
     /**
-     * Get pre select option from config
+     * Get preselect option from config
      *
      * @return string
      */
