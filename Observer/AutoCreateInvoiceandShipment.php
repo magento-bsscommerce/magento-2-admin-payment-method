@@ -12,7 +12,7 @@
  * @category  BSS
  * @package   Bss_AdminPaymentMethod
  * @author    Extension Team
- * @copyright Copyright (c) 2018-2019 BSS Commerce Co. ( http://bsscommerce.com )
+ * @copyright Copyright (c) 2018-2022 BSS Commerce Co. ( http://bsscommerce.com )
  * @license   http://bsscommerce.com/Bss-Commerce-License.txt
  */
 
@@ -20,6 +20,8 @@ namespace Bss\AdminPaymentMethod\Observer;
 
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Api\Data\OrderItemInterface;
 
 /**
  * Class AutoCreateInvoice
@@ -54,28 +56,55 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
     protected $shipmentNotifier;
 
     /**
+     * @var \Magento\Framework\App\ProductMetadataInterface
+     */
+    protected $productMetadata;
+
+    /**
+     * @var \Magento\Framework\Api\SearchCriteriaBuilder
+     */
+    protected $searchCriteriaBuilder;
+
+    /**
+     * @var \Magento\Sales\Api\OrderItemRepositoryInterface
+     */
+    protected $itemRepository;
+
+    /**
      * AutoCreateInvoice constructor.
+     *
      * @param \Magento\Sales\Model\Service\InvoiceService $invoiceService
      * @param \Magento\Framework\Message\ManagerInterface $messageManager
      * @param \Magento\Framework\DB\TransactionFactory $transaction
      * @param \Magento\Sales\Model\Convert\Order $convertOrder
      * @param \Magento\Shipping\Model\ShipmentNotifier $shipmentNotifier
+     * @param \Magento\Framework\App\ProductMetadataInterface $productMetadata
+     * @param \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param \Magento\Sales\Api\OrderItemRepositoryInterface $itemRepository
      */
     public function __construct(
         \Magento\Sales\Model\Service\InvoiceService $invoiceService,
         \Magento\Framework\Message\ManagerInterface $messageManager,
         \Magento\Framework\DB\TransactionFactory $transaction,
         \Magento\Sales\Model\Convert\Order $convertOrder,
-        \Magento\Shipping\Model\ShipmentNotifier $shipmentNotifier
+        \Magento\Shipping\Model\ShipmentNotifier $shipmentNotifier,
+        \Magento\Framework\App\ProductMetadataInterface $productMetadata,
+        \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
+        \Magento\Sales\Api\OrderItemRepositoryInterface $itemRepository
     ) {
         $this->invoiceService = $invoiceService;
         $this->transaction = $transaction;
         $this->messageManager = $messageManager;
         $this->convertOrder = $convertOrder;
         $this->shipmentNotifier = $shipmentNotifier;
+        $this->productMetadata = $productMetadata;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->itemRepository = $itemRepository;
     }
 
     /**
+     * Execute
+     *
      * @param Observer $observer
      * @throws \Magento\Framework\Exception\LocalizedException
      */
@@ -86,9 +115,9 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
 
         // Check code payment method
         if ($payment->getCode() == 'adminpaymentmethod') {
-            // Check option createshipment
+            // Check option create shipment
             $this->createShipment($payment, $order);
-            // Check option createinvoice
+            // Check option create invoice
             $this->createInvoice($payment, $order);
             //create notified invoice and shipment by Bss
             $this->displayNotified($order, $payment);
@@ -96,9 +125,12 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
     }
 
     /**
-     * @param $payment
-     * @param $order
-     * @return |null
+     * Create invoice
+     *
+     * @param \Bss\AdminPaymentMethod\Model\AdminPaymentMethod $payment
+     * @param \Magento\Sales\Model\Order $order
+     * @return void |null
+     * @throws \Exception
      */
     private function createInvoice($payment, $order)
     {
@@ -126,8 +158,10 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
     }
 
     /**
-     * @param $payment
-     * @param $order
+     * Create shipment
+     *
+     * @param \Bss\AdminPaymentMethod\Model\AdminPaymentMethod $payment
+     * @param \Magento\Sales\Model\Order $order
      * @throws \Magento\Framework\Exception\LocalizedException
      */
     private function createShipment($payment, $order)
@@ -140,7 +174,9 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                 );
             }
             $orderShipment = $this->convertOrder->toShipment($order);
-
+            if ($this->productMetadata->getVersion() > "2.3.6") {
+                $this->setItemsOrder($order);
+            }
             foreach ($order->getAllItems() as $orderItem) {
                 // Check virtual item and item Quantity
                 if (!$orderItem->getQtyToShip() || $orderItem->getIsVirtual()) {
@@ -155,13 +191,13 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
             $orderShipment->register();
             $orderShipment->getOrder()->setIsInProcess(true);
             try {
-                // Send Shipment Email
-                $this->shipmentNotifier->notify($orderShipment);
-                $orderShipment->save();
-
                 // Save created Order Shipment
                 $orderShipment->save();
                 $orderShipment->getOrder()->save();
+
+                // Send Shipment Email
+                $this->shipmentNotifier->notify($orderShipment);
+                $orderShipment->save();
 
                 //Show message create shipment
                 $this->messageManager->addSuccessMessage(__("Automatically generated Shipment."));
@@ -174,9 +210,12 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
     }
 
     /**
-     * @param $order
-     * @param $payment
-     * @return |null
+     * Display notified
+     *
+     * @param \Magento\Sales\Model\Order $order
+     * @param \Bss\AdminPaymentMethod\Model\AdminPaymentMethod $payment
+     * @return null
+     * @throws \Exception
      */
     private function displayNotified($order, $payment)
     {
@@ -194,5 +233,18 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
             $order->save();
             return null;
         }
+    }
+
+    /**
+     * Set items order when send email shipping
+     *
+     * @param Order $order
+     * @return void
+     */
+    public function setItemsOrder($order)
+    {
+        $this->searchCriteriaBuilder->addFilter(OrderItemInterface::ORDER_ID, $order->getId());
+        $searchCriteria = $this->searchCriteriaBuilder->create();
+        $order->setItems($this->itemRepository->getList($searchCriteria)->getItems());
     }
 }
