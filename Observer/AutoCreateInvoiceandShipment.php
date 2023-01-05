@@ -71,6 +71,11 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
     protected $itemRepository;
 
     /**
+     * @var Order\Invoice\Notifier
+     */
+    protected $invoiceNotifier;
+
+    /**
      * AutoCreateInvoice constructor.
      *
      * @param \Magento\Sales\Model\Service\InvoiceService $invoiceService
@@ -81,6 +86,7 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
      * @param \Magento\Framework\App\ProductMetadataInterface $productMetadata
      * @param \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder
      * @param \Magento\Sales\Api\OrderItemRepositoryInterface $itemRepository
+     * @param \Magento\Sales\Model\Order\Invoice\Notifier $invoiceNotifier
      */
     public function __construct(
         \Magento\Sales\Model\Service\InvoiceService $invoiceService,
@@ -90,7 +96,8 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
         \Magento\Shipping\Model\ShipmentNotifier $shipmentNotifier,
         \Magento\Framework\App\ProductMetadataInterface $productMetadata,
         \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
-        \Magento\Sales\Api\OrderItemRepositoryInterface $itemRepository
+        \Magento\Sales\Api\OrderItemRepositoryInterface $itemRepository,
+        \Magento\Sales\Model\Order\Invoice\Notifier $invoiceNotifier
     ) {
         $this->invoiceService = $invoiceService;
         $this->transaction = $transaction;
@@ -100,6 +107,7 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
         $this->productMetadata = $productMetadata;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->itemRepository = $itemRepository;
+        $this->invoiceNotifier = $invoiceNotifier;
     }
 
     /**
@@ -141,13 +149,16 @@ class AutoCreateInvoiceandShipment implements ObserverInterface
                         __('You cant create the Invoice of this order.')
                     );
                 }
-
+                if ($this->productMetadata->getVersion() > "2.3.6") {
+                    $this->setItemsOrder($order);
+                }
                 $invoice = $this->invoiceService->prepareInvoice($order);
                 $invoice->setRequestedCaptureCase(\Magento\Sales\Model\Order\Invoice::CAPTURE_ONLINE);
                 $invoice->register();
                 $invoice->getOrder()->setIsInProcess(true);
                 $transaction = $this->transaction->create()->addObject($invoice)->addObject($invoice->getOrder());
                 $transaction->save();
+                $this->invoiceNotifier->notify($order, $invoice);
                 //Show message create invoice
                 $this->messageManager->addSuccessMessage(__("Automatically generated Invoice."));
             } catch (\Exception $e) {
