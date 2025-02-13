@@ -1,6 +1,6 @@
-# Admin Payment Method for Magento 2
+# BSS Commerce Magento 2 Admin Payment Method
 
-Magento 2 Admin Payment Method extension allows store admins to create custom payment methods for admin orders. This is especially useful for handling offline payments, internal transactions, and special payment arrangements without exposing them to customers on the frontend.
+The Admin Payment Method for Magento 2 is a free module that allows store admins to create custom payment methods for admin orders. This is especially useful for handling offline payments, internal transactions, and special payment arrangements without exposing them to customers on the frontend.
 
 ## Key Features
 
